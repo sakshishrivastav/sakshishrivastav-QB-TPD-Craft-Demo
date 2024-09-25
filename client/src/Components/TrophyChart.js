@@ -1,52 +1,66 @@
 import Highcharts from 'highcharts';
-import React, { useEffect } from 'react';
+import HighchartsReact from 'highcharts-react-official';
+import PropTypes from 'prop-types';
+import React, { useRef } from 'react';
 
-const TrophyChart = ({countries,series}) => {
-    useEffect(() => {
-        Highcharts.chart('container', {
-            chart: {
-                type: 'column'
-            },
+const TrophyChart = ({ countries, series }) => {
+    const chartComponentRef = useRef();
+    const chartOptions = {
+        chart: {
+            type: 'column'
+        },
+        series: series,
+        title: {
+            text: 'Olympic Games All Time Medals Recieved',
+            align: 'left'
+        },
+        xAxis: {
+            categories: countries,
             title: {
-                text: 'Olympic Games All Time Medals Recieved',
-                align: 'left'
+                text: 'Country Name'
+            }
+        },
+        yAxis: {
+            min: 0,
+            title: {
+                text: 'Number of medals received'
             },
-            xAxis: {
-                categories: countries,
-                title: {
-                    text: 'Country Name'
-                }
-            },
-            yAxis: {
-                min: 0,
-                title: {
-                    text: 'Number of medals received'
-                },
-                stackLabels: {
+            stackLabels: {
+                enabled: true
+            }
+        },
+        legend: {
+            align: 'center',
+            verticalAlign: 'bottom',
+            borderColor: '#CCC',
+            borderWidth: 1,
+            shadow: false
+        },
+        tooltip: {
+            headerFormat: '<b>{point.x}</b><br/>',
+            pointFormat: '{series.name}: {point.y}<br/>Total: {point.stackTotal}'
+        },
+        plotOptions: {
+            column: {
+                stacking: 'normal',
+                dataLabels: {
                     enabled: true
                 }
-            },
-            legend: {
-                align: 'center',
-                verticalAlign: 'bottom',
-            },
-            tooltip: {
-                headerFormat: '<b>{point.x}</b><br/>',
-                pointFormat: '{series.name}: {point.y}<br/>Total: {point.stackTotal}'
-            },
-            plotOptions: {
-                column: {
-                    stacking: 'normal',
-                    dataLabels: {
-                        enabled: true
-                    }
-                }
-            },
-            series
-        });
-    }, []);
+            }
+        },
+        accessibility: {enabled: false},
+    }
 
-    return <div id="container"  />;
+    return <HighchartsReact
+        highcharts={Highcharts}
+        constructorType={'chart'}
+        ref={chartComponentRef}
+        options={chartOptions} />;
 };
+
+TrophyChart.propTypes = {
+    countries: PropTypes.array.isRequired,
+    series: PropTypes.array.isRequired,
+}
 
 export default TrophyChart;

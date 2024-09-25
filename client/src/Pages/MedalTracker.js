@@ -4,110 +4,102 @@ import { Box, Button, FormControl, InputLabel, MenuItem, Select } from '@mui/mat
 
 import TrophyChart from "../Components/TrophyChart";
 import { API_SERVER } from "../Constants/ApiConstants";
+
 const MedalTracker = () => {
+
   const [country, setCountry] = useState('');
   const [sport, setSport] = useState('');
   const [medal, setMedal] = useState('');
   const [year, setYear] = useState('');
-  const [medalsData, setMedalsData] = useState('')
+  const [medalsData, setMedalsData] = useState();
 
-const uniqueCountries = [...new Set(medalsData?.rows?.map(row => row.country))];
-const countMedalsByType = (medalType) => {
-  return uniqueCountries.map(country => ({
-      country,
-      count: medalsData.rows.filter(row =>
-          row.country === country && row.medal_type.toLowerCase() === medalType.toLowerCase()
-      ).length
-  }))
-  .map(item => item.count === 0 ? null : item.count);
-};
-const series = [
-    {
-        name: 'Bronze',
-        data: countMedalsByType('Bronze'),
-        color: '#DAA520'
-    },
-    {
-        name: 'Gold',
-        data: countMedalsByType('Gold'),
-        color: 'yellow'
-    },
-    {
-        name: 'Silver',
-        data: countMedalsByType('Silver'),
-        color: 'grey'
-    }
-];
-
-const countries = uniqueCountries;
-
-console.log("Series:", series);
-console.log("Countries:", countries);
-
-  const handleCountryChange = (event) => {
-    setCountry(event.target.value);
-  };
-
-  const handleSportChange = (event) => {
-    setSport(event.target.value);
-  };
-
-  const handleMedalChange = (event) => {
-    setMedal(event.target.value);
-  };
-
-  const handleYearChange = (event) => {
-    setYear(event.target.value);
-  };
-
-
-
-  const handleSubmit = async (country,sport,medal,year) => {
+  const handleSubmit = async (country, sport, medal, year) => {
     try {
+      if (country && sport && medal && year) {
         const response = await fetch(`${API_SERVER.URL}/medals`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                country,
-                sport,
-                medal,
-                year
-            })
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+              country,
+              sport,
+              medal,
+              year
+          })
         });
 
         const result = await response.json();
         if (response.ok) {
+          setCountry('');
+          setSport('');
+          setMedal('');
+          setYear('');
+
+          const data = await fetch(`${API_SERVER.URL}/medals`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }).then(response => response.json());
+          setMedalsData(data)
           console.log('Saved Data:', result);
-          await getMedalRecords()
         } else {
             console.error(`Failed to save data`);
         }
+      }
     } catch (error) {
         console.error(error);
     }
-};
+  };
 
-const getMedalRecords = async () => {
-  try {
-    const response = await fetch(`${API_SERVER.URL}/medals`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
+  const _uniqueCountries = [...new Set(medalsData?.rows?.map(row => row.country))];
+
+  const _countMedalsByType = (medalType) => {
+    return _uniqueCountries.map(country => ({
+        country,
+        count: medalsData?.rows?.filter(row =>
+            row.country === country && row.medal_type.toLowerCase() === medalType.toLowerCase()
+        ).length
+    }))
+    .map(item => item.count === 0 ? null : item.count);
+  };
+
+  const _series = [
+      {
+          name: 'Bronze',
+          data: _countMedalsByType('Bronze'),
+          color: '#DAA520'
       },
-    });
-
-    const data = await response.json();
-    setMedalsData(data);
-  } catch (err) {
-    console.log("error:", err);
-  }
-};
+      {
+          name: 'Gold',
+          data: _countMedalsByType('Gold'),
+          color: 'yellow'
+      },
+      {
+          name: 'Silver',
+          data: _countMedalsByType('Silver'),
+          color: 'grey'
+      }
+  ];
 
   useEffect(() => {
-    getMedalRecords()
-  },[])
+    (async () => {
+      try {
+        const data = await fetch(`${API_SERVER.URL}/medals`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }).then(response => response.json());
+        console.log("Fetch data:", data);
+        setMedalsData(data);
+      } catch (error) {
+        console.log("Fetch error:", error);
+      }
+    })();
+  }, [])
+
   return (
     <Box
       sx={{
@@ -124,7 +116,7 @@ const getMedalRecords = async () => {
         <Select
           labelId="country-label"
           value={country}
-          onChange={handleCountryChange}
+          onChange={(event)=>setCountry(event.target.value)}
           label="Country"
         >
           <MenuItem value="Canada">Canada</MenuItem>
@@ -139,7 +131,7 @@ const getMedalRecords = async () => {
         <Select
           labelId="sport-label"
           value={sport}
-          onChange={handleSportChange}
+          onChange={(event)=> setSport(event.target.value)}
           label="Sport"
         >
           <MenuItem value="Wrestling">Wrestling</MenuItem>
@@ -154,7 +146,7 @@ const getMedalRecords = async () => {
         <Select
           labelId="medal-label"
           value={medal}
-          onChange={handleMedalChange}
+          onChange={(event)=> setMedal(event.target.value)}
           label="Medal"
         >
           <MenuItem value="Gold">Gold</MenuItem>
@@ -168,7 +160,7 @@ const getMedalRecords = async () => {
         <Select
           labelId="year-label"
           value={year}
-          onChange={handleYearChange}
+          onChange={(event)=> setYear(event.target.value)}
           label="Year"
         >
           <MenuItem value="2024">2024</MenuItem>
@@ -185,7 +177,7 @@ const getMedalRecords = async () => {
       >
         Submit
         </Button>
-        {medalsData && <TrophyChart countries={countries} series={series} ></TrophyChart>}
+        {medalsData ? <TrophyChart countries={_uniqueCountries} series={_series} />: ''}
       </Box>
 
 
