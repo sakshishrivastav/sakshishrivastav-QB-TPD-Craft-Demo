@@ -9,21 +9,40 @@ const MedalTracker = () => {
   const [sport, setSport] = useState('');
   const [medal, setMedal] = useState('');
   const [year, setYear] = useState('');
-  const[medalsData,setMedalsData] = useState('')
-  const countries = ['Canada', 'Germany', 'Norway', 'United States']
-  const types = [{
+  const [medalsData, setMedalsData] = useState('')
+
+const uniqueCountries = [...new Set(medalsData?.rows?.map(row => row.country))];
+const countMedalsByType = (medalType) => {
+  return uniqueCountries.map(country => ({
+      country,
+      count: medalsData.rows.filter(row =>
+          row.country === country && row.medal_type.toLowerCase() === medalType.toLowerCase()
+      ).length
+  }))
+  .map(item => item.count === 0 ? null : item.count);
+};
+const series = [
+    {
         name: 'Bronze',
-        data: [2,5,7,9],
+        data: countMedalsByType('Bronze'),
         color: '#DAA520'
-    }, {
+    },
+    {
         name: 'Gold',
-        data: [2,8,9,0],
+        data: countMedalsByType('Gold'),
         color: 'yellow'
-    }, {
+    },
+    {
         name: 'Silver',
-        data: [0,1,2,3],
+        data: countMedalsByType('Silver'),
         color: 'grey'
-    }]
+    }
+];
+
+const countries = uniqueCountries;
+
+console.log("Series:", series);
+console.log("Countries:", countries);
 
   const handleCountryChange = (event) => {
     setCountry(event.target.value);
@@ -60,7 +79,8 @@ const MedalTracker = () => {
 
         const result = await response.json();
         if (response.ok) {
-            console.log('Saved Data:', result);
+          console.log('Saved Data:', result);
+          await getMedalRecords()
         } else {
             console.error(`Failed to save data`);
         }
@@ -69,20 +89,22 @@ const MedalTracker = () => {
     }
 };
 
-  const getMedalRecords = async () => {
+const getMedalRecords = async () => {
   try {
-      const response = await fetch(`${API_SERVER.URL}/medals`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }).then((res)=>res.json())
-    console.log("response", response)
-    setMedalsData(response)
-    } catch(err) {
-      console.log("error:", err)
-    }
+    const response = await fetch(`${API_SERVER.URL}/medals`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+    setMedalsData(data);
+  } catch (err) {
+    console.log("error:", err);
   }
+};
+
   useEffect(() => {
     getMedalRecords()
   },[])
@@ -91,19 +113,10 @@ const MedalTracker = () => {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        gap: 2,
-        width: '80%',
+        gap: 1,
+        width: '34%',
         margin: '0 auto'
       }}
-      >
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-          width: '50%',
-          margin: '0 auto'
-        }}
       >
       <h3> Select the fields</h3>
           <FormControl fullWidth>
@@ -172,10 +185,10 @@ const MedalTracker = () => {
       >
         Submit
         </Button>
-        {medalsData && <TrophyChart countries={countries} series={types} ></TrophyChart>}
+        {medalsData && <TrophyChart countries={countries} series={series} ></TrophyChart>}
       </Box>
 
-    </Box>
+
   );
 };
 
